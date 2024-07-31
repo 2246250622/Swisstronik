@@ -1,5 +1,6 @@
 const hre = require("hardhat");
 const { encryptDataField, decryptNodeResponse } = require("@swisstronik/utils");
+const fs = require("fs");
 
 const sendShieldedQuery = async (provider, destination, data) => {
   const rpclink = hre.network.config.url;
@@ -12,7 +13,7 @@ const sendShieldedQuery = async (provider, destination, data) => {
 };
 
 async function main() {
-  const contractAddress = "0xf84Df872D385997aBc28E3f07A2E3cd707c9698a";
+  const contractAddress = fs.readFileSync("proxiedContract.txt", "utf8").trim();
   const [signer] = await hre.ethers.getSigners();
   const contractFactory = await hre.ethers.getContractFactory("Swisstronik");
   const contract = contractFactory.attach(contractAddress);

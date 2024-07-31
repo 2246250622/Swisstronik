@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 contract Swisstronik {
     string private message;
 
-    constructor(string memory _message) payable {
+    function initialize(string memory _message) public {
         message = _message;
     }
 
