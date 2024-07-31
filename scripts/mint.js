@@ -16,17 +16,17 @@ const sendShieldedTransaction = async (signer, destination, data, value) => {
 async function main() {
   const contractAddress = fs.readFileSync("contract.txt", "utf8").trim();
   const [signer] = await hre.ethers.getSigners();
-  const contractFactory = await hre.ethers.getContractFactory("PERC20Sample");
+  const contractFactory = await hre.ethers.getContractFactory("PrivateNFT");
   const contract = contractFactory.attach(contractAddress);
-  const functionName = "mint100tokens";
-  const mint100TokensTx = await sendShieldedTransaction(
+  const functionName = "safeMint";
+  const safeMintTx = await sendShieldedTransaction(
     signer,
     contractAddress,
-    contract.interface.encodeFunctionData(functionName),
+    contract.interface.encodeFunctionData(functionName, [signer.address, 1]),
     0
   );
-  await mint100TokensTx.wait();
-  console.log("Transaction Receipt: ", `Minting token has been success! Transaction hash: https://explorer-evm.testnet.swisstronik.com/tx/${mint100TokensTx.hash}`);
+  await safeMintTx.wait();
+  console.log("Transaction Receipt: ", `Minting NFT has been success! Transaction hash: https://explorer-evm.testnet.swisstronik.com/tx/${safeMintTx.hash}`);
 }
 
 main().catch((error) => {
