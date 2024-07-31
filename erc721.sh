@@ -6,7 +6,7 @@ sleep 4
 sudo apt-get update && sudo apt-get upgrade -y
 clear
 
-echo "Installing Hardhat and dotenv..."
+echo "Installing dependencies..."
 npm install --save-dev hardhat
 npm install dotenv
 npm install @swisstronik/utils
@@ -47,30 +47,30 @@ module.exports = {
 EOL
 echo "Hardhat configuration completed."
 
-read -p "Enter the token name: " TOKEN_NAME
-read -p "Enter the token symbol: " TOKEN_SYMBOL
+read -p "Enter the NFT name: " NFT_NAME
+read -p "Enter the NFT symbol: " NFT_SYMBOL
 
-echo "Creating Token.sol contract..."
+echo "Creating NFT.sol contract..."
 mkdir -p contracts
-cat <<EOL > contracts/Token.sol
-// SPDX-License-Identifier: UNLICENSED
+cat <<EOL > contracts/NFT.sol
+// SPDX-License-Identifier: MIT
+// Compatible with OpenZeppelin Contracts ^5.0.0
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
-contract TestToken is ERC20 {
-    constructor()ERC20("$TOKEN_NAME","$TOKEN_SYMBOL"){} 
+contract TestNFT is ERC721, ERC721Burnable {
+    constructor()
+        ERC721("$NFT_NAME","$NFT_SYMBOL")
+    {}
 
-    function mint100tokens() public {
-        _mint(msg.sender, 100*10**18);
-    }
-
-    function burn100tokens() public{
-        _burn(msg.sender, 100*10**18);
+    function safeMint(address to, uint256 tokenId) public {
+        _safeMint(to, tokenId);
     }
 }
 EOL
-echo "Token.sol contract created."
+echo "NFT.sol contract created."
 
 echo "Compiling the contract..."
 npx hardhat compile
@@ -83,7 +83,7 @@ const hre = require("hardhat");
 const fs = require("fs");
 
 async function main() {
-  const contract = await hre.ethers.deployContract("TestToken");
+  const contract = await hre.ethers.deployContract("TestNFT");
   await contract.waitForDeployment();
   const deployedContract = await contract.getAddress();
   fs.writeFileSync("contract.txt", deployedContract);
@@ -121,17 +121,17 @@ const sendShieldedTransaction = async (signer, destination, data, value) => {
 async function main() {
   const contractAddress = fs.readFileSync("contract.txt", "utf8").trim();
   const [signer] = await hre.ethers.getSigners();
-  const contractFactory = await hre.ethers.getContractFactory("TestToken");
+  const contractFactory = await hre.ethers.getContractFactory("TestNFT");
   const contract = contractFactory.attach(contractAddress);
-  const functionName = "mint100tokens";
-  const mint100TokensTx = await sendShieldedTransaction(
+  const functionName = "safeMint";
+  const safeMintTx = await sendShieldedTransaction(
     signer,
     contractAddress,
-    contract.interface.encodeFunctionData(functionName),
+    contract.interface.encodeFunctionData(functionName, [signer.address, 1]),
     0
   );
-  await mint100TokensTx.wait();
-  console.log("Transaction Receipt: ", \`Minting token has been success! Transaction hash: https://explorer-evm.testnet.swisstronik.com/tx/\${mint100TokensTx.hash}\`);
+  await safeMintTx.wait();
+  console.log("Transaction Receipt: ", \`Minting NFT has been success! Transaction hash: https://explorer-evm.testnet.swisstronik.com/tx/\${safeMintTx.hash}\`);
 }
 
 main().catch((error) => {
@@ -141,53 +141,8 @@ main().catch((error) => {
 EOL
 echo "mint.js script created."
 
-echo "Minting tokens..."
+echo "Minting NFT..."
 npx hardhat run scripts/mint.js --network swisstronik
-echo "Tokens minted."
+echo "NFT minted."
 
-echo "Creating transfer.js script..."
-cat <<EOL > scripts/transfer.js
-const hre = require("hardhat");
-const fs = require("fs");
-const { encryptDataField, decryptNodeResponse } = require("@swisstronik/utils");
-
-const sendShieldedTransaction = async (signer, destination, data, value) => {
-  const rpcLink = hre.network.config.url;
-  const [encryptedData] = await encryptDataField(rpcLink, data);
-  return await signer.sendTransaction({
-    from: signer.address,
-    to: destination,
-    data: encryptedData,
-    value,
-  });
-};
-
-async function main() {
-  const contractAddress = fs.readFileSync("contract.txt", "utf8").trim();
-  const [signer] = await hre.ethers.getSigners();
-  const contractFactory = await hre.ethers.getContractFactory("TestToken");
-  const contract = contractFactory.attach(contractAddress);
-  const functionName = "transfer";
-  const amount = 1 * 10 ** 18;
-  const functionArgs = ["0x16af037878a6cAce2Ea29d39A3757aC2F6F7aac1", amount.toString()];
-  const transaction = await sendShieldedTransaction(
-    signer,
-    contractAddress,
-    contract.interface.encodeFunctionData(functionName, functionArgs),
-    0
-  );
-  await transaction.wait();
-  console.log("Transaction Response: ", \`Transfer token has been success! Transaction hash: https://explorer-evm.testnet.swisstronik.com/tx/\${transaction.hash}\`);
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
-EOL
-echo "transfer.js script created."
-
-echo "Transferring tokens..."
-npx hardhat run scripts/transfer.js --network swisstronik
-echo "Tokens transferred."
 echo "Done! Subscribe: https://t.me/GaCryptOfficial"
