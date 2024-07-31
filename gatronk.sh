@@ -170,4 +170,8 @@ echo "getMessage.js script created."
 echo "Running getMessage.js..."
 npx hardhat run scripts/getMessage.js --network swisstronik
 echo "Message retrieved."
+<<<<<<< HEAD
 echo "Done! Subscribe: https://t.me/GaCryptOfficial"
+=======
+echo "Done! Subscribe: https://t.me/GaCryptOfficial"
+>>>>>>> origin/main
