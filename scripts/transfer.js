@@ -16,7 +16,7 @@ const sendShieldedTransaction = async (signer, destination, data, value) => {
 async function main() {
   const contractAddress = fs.readFileSync("contract.txt", "utf8").trim();
   const [signer] = await hre.ethers.getSigners();
-  const contractFactory = await hre.ethers.getContractFactory("TestToken");
+  const contractFactory = await hre.ethers.getContractFactory("PERC20Sample");
   const contract = contractFactory.attach(contractAddress);
   const functionName = "transfer";
   const amount = 1 * 10 ** 18;
